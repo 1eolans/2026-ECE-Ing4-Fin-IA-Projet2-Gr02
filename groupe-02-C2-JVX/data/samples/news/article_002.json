@@ -1,0 +1,10 @@
+{
+  "id": "article_002",
+  "title": "Microsoft : Azure accélère grâce à l'IA, revenus cloud record au T3 FY2024",
+  "content": "Microsoft (MSFT) a publié des résultats du troisième trimestre fiscal 2024 en forte hausse, avec un chiffre d'affaires de 61,9 milliards de dollars (+17% YoY), dépassant les attentes des analystes de 60,8 Md$. Le segment Intelligent Cloud a été le grand gagnant avec des revenus de 26,7 Md$ (+21% YoY), portés par Azure qui a affiché une croissance de 31% en glissement annuel. La PDG Satya Nadella a souligné l'accélération de l'adoption de l'IA générative : 'Copilot est en train de transformer la façon dont les gens travaillent. Nous voyons des clients qui doublent leur engagement Azure dans les 6 mois suivant le déploiement de Copilot.' Microsoft 365 Copilot, lancé en novembre 2023 pour les entreprises, compte désormais plus de 1,5 million d'utilisateurs actifs dans 40 000 organisations. Le revenu par utilisateur de Microsoft 365 a augmenté de 9% grâce à la montée en gamme vers les formules incluant Copilot. Le bénéfice net a progressé de 20% à 21,9 Md$ avec une marge nette de 35,4%. L'action MSFT a gagné 4,5% en after-hours.",
+  "source": "Bloomberg (simulé)",
+  "date": "2024-04-25",
+  "ticker": "MSFT",
+  "url": "https://example.com/news/microsoft-q3-2024",
+  "category": "earnings"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "article_005",
+  "title": "La Fed réduit ses taux directeurs pour la première fois depuis 2020",
+  "content": "La Réserve Fédérale américaine (Fed) a abaissé ses taux directeurs de 25 points de base lors de sa réunion du 17-18 septembre 2024, portant la fourchette cible des Fed Funds à 5,00%-5,25%, la première baisse depuis mars 2020 en pleine pandémie COVID-19. Le président Jerome Powell a justifié cette décision par les 'progrès substantiels' réalisés dans la lutte contre l'inflation et les signes de modération du marché de l'emploi. L'inflation PCE (mesure préférée de la Fed) s'établit à 2,2% en août 2024, proche de l'objectif de 2%. Le taux de chômage est remonté à 4,3%, contre un point bas de 3,4% en 2023. Les marchés actions ont réagi positivement : le S&P 500 a progressé de 1,7% et le Nasdaq de 2,5%. Les obligations d'État ont également bondi, avec le taux 10 ans américain qui s'est replié de 12pb à 3,68%. Le 'dot plot' de la Fed anticipe deux baisses supplémentaires de 25pb d'ici fin 2024 et quatre autres en 2025, ramenant les taux vers 3,25%-3,50%.",
+  "source": "Wall Street Journal (simulé)",
+  "date": "2024-09-18",
+  "ticker": "SPY",
+  "url": "https://example.com/news/fed-rate-cut-september-2024",
+  "category": "macro"
+}

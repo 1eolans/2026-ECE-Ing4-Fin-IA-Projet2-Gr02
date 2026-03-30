@@ -1,0 +1,10 @@
+{
+  "id": "article_004",
+  "title": "Apple Intelligence : la stratégie IA d'Apple pour regagner le leadership technologique",
+  "content": "Apple a présenté lors de la WWDC 2024 sa stratégie d'intelligence artificielle baptisée 'Apple Intelligence', intégrée à iOS 18, iPadOS 18 et macOS Sequoia. Contrairement à ses concurrents, Apple mise sur une approche hybride : traitement local sur les appareils Apple Silicon pour les données sensibles, et recours optionnel à OpenAI GPT-4o pour les requêtes complexes nécessitant plus de puissance. Les fonctionnalités phares incluent : la réécriture intelligente de texte, la génération d'images (Image Playground), un Siri considérablement amélioré avec compréhension du contexte et intégration cross-apps, et la gestion prioritaire des notifications par IA. Certains analystes estiment qu'Apple Intelligence pourrait déclencher un 'super cycle' de renouvellement d'iPhone, les utilisateurs souhaitant accéder aux nouvelles fonctionnalités IA réservées aux iPhone 15 Pro et futurs iPhone 16. Dan Ives de Wedbush Securities a relevé son objectif de cours sur AAPL à 285$ (vs 225$ auparavant), estimant que l'IA pourrait ajouter 30-40 Md$ de revenus incrémentaux d'ici 2026. La fonctionnalité sera disponible en bêta dès septembre 2024 en anglais américain.",
+  "source": "The Verge (simulé)",
+  "date": "2024-06-10",
+  "ticker": "AAPL",
+  "url": "https://example.com/news/apple-intelligence-wwdc-2024",
+  "category": "technology"
+}

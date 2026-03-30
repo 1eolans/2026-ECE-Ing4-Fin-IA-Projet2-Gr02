@@ -1,0 +1,70 @@
+2026-03-16 21:14:02.266 | ERROR    | __main__:main:292 - Erreur: No module named 'langchain.schema'
+2026-03-16 21:18:32.202 | ERROR    | __main__:main:292 - Erreur: No module named 'langchain.schema'
+2026-03-16 21:20:28.583 | INFO     | __main__:cmd_ingest:98 - Ingestion depuis: data\samples
+2026-03-16 21:20:28.587 | INFO     | __main__:cmd_ingest:109 - 13 fichiers à traiter
+2026-03-16 21:20:28.590 | INFO     | src.ingestion.document_loader:load:108 - Chargement : apple_annual_report_2023.pdf (type=.pdf)
+2026-03-16 21:20:29.727 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 6 documents depuis apple_annual_report_2023.pdf
+2026-03-16 21:20:29.727 | INFO     | src.ingestion.table_extractor:extract_tables_from_pdf:114 - Extraction tableaux : apple_annual_report_2023.pdf
+2026-03-16 21:20:35.544 | DEBUG    | src.ingestion.table_extractor:_extract_with_camelot:146 - camelot lattice: 6 tableaux trouvés
+2026-03-16 21:20:35.579 | INFO     | src.ingestion.table_extractor:extract_tables_from_pdf:125 - Tableaux extraits : 6 depuis apple_annual_report_2023.pdf
+2026-03-16 21:20:35.582 | INFO     | src.ingestion.document_loader:load:108 - Chargement : eval_questions.json (type=.json)
+2026-03-16 21:20:35.599 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 0 documents depuis eval_questions.json
+2026-03-16 21:20:35.599 | INFO     | src.ingestion.document_loader:load:108 - Chargement : market_overview_2024.pdf (type=.pdf)
+2026-03-16 21:20:35.842 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 4 documents depuis market_overview_2024.pdf
+2026-03-16 21:20:35.842 | INFO     | src.ingestion.table_extractor:extract_tables_from_pdf:114 - Extraction tableaux : market_overview_2024.pdf
+2026-03-16 21:20:38.933 | DEBUG    | src.ingestion.table_extractor:_extract_with_camelot:146 - camelot lattice: 4 tableaux trouvés
+2026-03-16 21:20:38.948 | INFO     | src.ingestion.table_extractor:extract_tables_from_pdf:125 - Tableaux extraits : 4 depuis market_overview_2024.pdf
+2026-03-16 21:20:38.948 | INFO     | src.ingestion.document_loader:load:108 - Chargement : microsoft_q4_2024.pdf (type=.pdf)
+2026-03-16 21:20:39.198 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 4 documents depuis microsoft_q4_2024.pdf
+2026-03-16 21:20:39.198 | INFO     | src.ingestion.table_extractor:extract_tables_from_pdf:114 - Extraction tableaux : microsoft_q4_2024.pdf
+2026-03-16 21:20:42.261 | DEBUG    | src.ingestion.table_extractor:_extract_with_camelot:146 - camelot lattice: 4 tableaux trouvés
+2026-03-16 21:20:42.277 | INFO     | src.ingestion.table_extractor:extract_tables_from_pdf:125 - Tableaux extraits : 4 depuis microsoft_q4_2024.pdf
+2026-03-16 21:20:42.278 | INFO     | src.ingestion.document_loader:load:108 - Chargement : portfolio.csv (type=.csv)
+2026-03-16 21:20:42.278 | ERROR    | src.ingestion.document_loader:_load_csv:276 - Erreur CSV portfolio.csv: read_csv() got an unexpected keyword argument 'errors'
+2026-03-16 21:20:42.278 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 0 documents depuis portfolio.csv
+2026-03-16 21:20:42.278 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_001.json (type=.json)
+2026-03-16 21:20:42.305 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_001.json
+2026-03-16 21:20:42.306 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_002.json (type=.json)
+2026-03-16 21:20:42.326 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_002.json
+2026-03-16 21:20:42.326 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_003.json (type=.json)
+2026-03-16 21:20:42.347 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_003.json
+2026-03-16 21:20:42.347 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_004.json (type=.json)
+2026-03-16 21:20:42.373 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_004.json
+2026-03-16 21:20:42.373 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_005.json (type=.json)
+2026-03-16 21:20:42.394 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_005.json
+2026-03-16 21:20:42.397 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_006.json (type=.json)
+2026-03-16 21:20:42.417 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_006.json
+2026-03-16 21:20:42.417 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_007.json (type=.json)
+2026-03-16 21:20:42.438 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_007.json
+2026-03-16 21:20:42.438 | INFO     | src.ingestion.document_loader:load:108 - Chargement : article_008.json (type=.json)
+2026-03-16 21:20:42.460 | SUCCESS  | src.ingestion.document_loader:load:126 - Chargé 1 documents depuis article_008.json
+2026-03-16 21:20:42.460 | INFO     | __main__:cmd_ingest:120 - 36 documents chargés
+2026-03-16 21:20:42.474 | INFO     | src.ingestion.chunker:chunk_documents:167 - Chunking : 36 docs → 80 chunks
+2026-03-16 21:20:42.474 | INFO     | __main__:cmd_ingest:128 - 80 chunks créés
+2026-03-16 21:20:46.012 | INFO     | __main__:_build_system:62 - Initialisation du système FinRAG...
+2026-03-16 21:20:46.012 | INFO     | src.retrieval.vector_store:__init__:148 - Initialisation ChromaDB : C:\Users\xavie\OneDrive\Documents\COURS_ECE\ING4\IA finance\projet2\2026-ECE-Ing4-Fin-IA-Projet2-Gr02\groupe-02-C2-JVX\data\chroma_db
+2026-03-16 21:20:52.696 | INFO     | src.retrieval.vector_store:_initialize_openai:50 - Embeddings OpenAI : text-embedding-3-small
+2026-03-16 21:20:52.745 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_reports' : 0 docs
+2026-03-16 21:20:52.761 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_news' : 0 docs
+2026-03-16 21:20:52.777 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_tables' : 0 docs
+2026-03-16 21:20:52.790 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_csv' : 0 docs
+2026-03-16 21:20:52.790 | INFO     | src.retrieval.retriever:__init__:138 - HybridRetriever initialisé (dense_k=20, sparse_k=20, top_k=10)
+2026-03-16 21:20:52.790 | INFO     | src.retrieval.reranker:__init__:89 - CrossEncoderReRanker initialisé (lazy loading): cross-encoder/ms-marco-MiniLM-L-6-v2
+2026-03-16 21:20:54.844 | INFO     | src.generation.generator:_initialize:211 - Générateur Anthropic initialisé : claude-sonnet-4-20250514
+2026-03-16 21:20:55.521 | INFO     | src.agents.query_decomposer:_initialize:213 - QueryDecomposer Anthropic initialisé
+2026-03-16 21:20:55.521 | INFO     | src.agents.rag_agent:__init__:170 - FinancialRAGAgent initialisé
+2026-03-16 21:21:11.715 | SUCCESS  | src.retrieval.vector_store:add_documents:241 - Indexé 80/80 documents
+2026-03-16 21:21:11.715 | INFO     | src.retrieval.retriever:invalidate_bm25_cache:352 - Cache BM25 invalidé
+2026-03-16 21:21:11.746 | SUCCESS  | __main__:cmd_ingest:137 - Indexation terminée: 80 chunks ajoutés. Total dans le store: 80 chunks, 14 sources.
+2026-03-16 21:21:29.430 | INFO     | __main__:_build_system:62 - Initialisation du système FinRAG...
+2026-03-16 21:21:29.430 | INFO     | src.retrieval.vector_store:__init__:148 - Initialisation ChromaDB : C:\Users\xavie\OneDrive\Documents\COURS_ECE\ING4\IA finance\projet2\2026-ECE-Ing4-Fin-IA-Projet2-Gr02\groupe-02-C2-JVX\data\chroma_db
+2026-03-16 21:21:51.728 | INFO     | src.retrieval.vector_store:_initialize_openai:50 - Embeddings OpenAI : text-embedding-3-small
+2026-03-16 21:21:51.805 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_reports' : 31 docs
+2026-03-16 21:21:51.849 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_news' : 31 docs
+2026-03-16 21:21:51.888 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_tables' : 18 docs
+2026-03-16 21:21:51.891 | DEBUG    | src.retrieval.vector_store:_init_collections:169 - Collection 'finrag_csv' : 0 docs
+2026-03-16 21:21:51.891 | INFO     | src.retrieval.retriever:__init__:138 - HybridRetriever initialisé (dense_k=20, sparse_k=20, top_k=10)
+2026-03-16 21:21:51.893 | INFO     | src.retrieval.reranker:__init__:89 - CrossEncoderReRanker initialisé (lazy loading): cross-encoder/ms-marco-MiniLM-L-6-v2
+2026-03-16 21:21:54.020 | INFO     | src.generation.generator:_initialize:211 - Générateur Anthropic initialisé : claude-sonnet-4-20250514
+2026-03-16 21:21:54.725 | INFO     | src.agents.query_decomposer:_initialize:213 - QueryDecomposer Anthropic initialisé
+2026-03-16 21:21:54.727 | INFO     | src.agents.rag_agent:__init__:170 - FinancialRAGAgent initialisé

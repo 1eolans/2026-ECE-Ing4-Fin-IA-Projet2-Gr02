@@ -1,0 +1,10 @@
+{
+  "id": "article_007",
+  "title": "Résultats S&P 500 T2 2024 : la saison des résultats dépasse les attentes",
+  "content": "La saison des résultats du deuxième trimestre 2024 du S&P 500 s'achève sur une note très positive, avec 79% des entreprises ayant publié des bénéfices supérieurs aux attentes des analystes, au-dessus de la moyenne historique de 74%. La croissance agrégée des bénéfices par action du S&P 500 ressort à +11,5% YoY, la meilleure performance depuis le T1 2022, portée par les secteurs Technologie (+20%) et Communication (+16%). Les 'Magnificent 7' (Apple, Microsoft, Alphabet, Amazon, Meta, NVIDIA, Tesla) ont collectivement augmenté leurs bénéfices de 35% YoY, représentant 35% de la capitalisation totale du S&P 500. Les revenus agrégés ont progressé de +5,2% YoY, avec une marge opérationnelle médiane en hausse à 15,8% contre 14,9% au T2 2023. Les analystes de Goldman Sachs ont relevé leurs prévisions de BPA S&P 500 pour 2024 à 255$ (+6%) et pour 2025 à 278$ (+9%), impliquant un P/E forward de 21,5x à 5 500 points.",
+  "source": "FactSet (simulé)",
+  "date": "2024-08-09",
+  "ticker": "SPY",
+  "url": "https://example.com/news/sp500-q2-2024-earnings",
+  "category": "market"
+}

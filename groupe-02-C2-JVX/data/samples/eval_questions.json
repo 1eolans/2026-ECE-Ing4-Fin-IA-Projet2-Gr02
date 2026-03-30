@@ -1,0 +1,107 @@
+[
+  {
+    "id": "q001",
+    "question": "Quel est le chiffre d'affaires total d'Apple en FY2023 ?",
+    "ground_truth": "Le chiffre d'affaires total d'Apple en FY2023 était de 383,3 milliards de dollars (383 285 millions), en baisse de 2,8% par rapport à FY2022.",
+    "document": "apple_annual_report_2023.pdf",
+    "category": "revenue"
+  },
+  {
+    "id": "q002",
+    "question": "Quelle est la marge nette d'Apple en FY2023 ?",
+    "ground_truth": "La marge nette d'Apple en FY2023 est de 25,3%, avec un bénéfice net de 97,0 milliards de dollars.",
+    "document": "apple_annual_report_2023.pdf",
+    "category": "profitability"
+  },
+  {
+    "id": "q003",
+    "question": "Quel segment génère le plus de revenus pour Apple en FY2023 ?",
+    "ground_truth": "L'iPhone est le segment générant le plus de revenus pour Apple en FY2023, avec 200,6 milliards de dollars, représentant 52,3% du chiffre d'affaires total.",
+    "document": "apple_annual_report_2023.pdf",
+    "category": "segments"
+  },
+  {
+    "id": "q004",
+    "question": "Quelle est la croissance du segment Services d'Apple en FY2023 ?",
+    "ground_truth": "Le segment Services d'Apple a crû de 16,1% en FY2023, passant de 73,4 milliards de dollars en FY2022 à 85,2 milliards en FY2023.",
+    "document": "apple_annual_report_2023.pdf",
+    "category": "growth"
+  },
+  {
+    "id": "q005",
+    "question": "Quel est l'EPS dilué d'Apple en FY2023 ?",
+    "ground_truth": "Le bénéfice par action (EPS) dilué d'Apple en FY2023 est de 6,13 dollars, en progression de 0,3% par rapport à 6,11 dollars en FY2022.",
+    "document": "apple_annual_report_2023.pdf",
+    "category": "per_share"
+  },
+  {
+    "id": "q006",
+    "question": "Quel est le chiffre d'affaires de Microsoft au T4 FY2024 ?",
+    "ground_truth": "Microsoft a réalisé un chiffre d'affaires de 64,7 milliards de dollars au T4 FY2024, en hausse de 15,2% par rapport au T4 FY2023 (56,2 Md$).",
+    "document": "microsoft_q4_2024.pdf",
+    "category": "revenue"
+  },
+  {
+    "id": "q007",
+    "question": "Quelle est la croissance d'Azure au T4 FY2024 ?",
+    "ground_truth": "Azure et les services cloud de Microsoft ont affiché une croissance de 29% au T4 FY2024, avec des revenus de 28,5 milliards de dollars contre 22,1 Md$ au T4 FY2023.",
+    "document": "microsoft_q4_2024.pdf",
+    "category": "growth"
+  },
+  {
+    "id": "q008",
+    "question": "Combien Microsoft a-t-il de sièges Copilot déployés dans les entreprises ?",
+    "ground_truth": "Microsoft a déployé plus de 1,8 million de sièges Copilot dans les entreprises au T4 FY2024, à un prix de 30 dollars par mois par utilisateur.",
+    "document": "microsoft_q4_2024.pdf",
+    "category": "ai"
+  },
+  {
+    "id": "q009",
+    "question": "Quelle est la marge brute annuelle de Microsoft en FY2024 ?",
+    "ground_truth": "La marge brute annuelle de Microsoft en FY2024 est de 69,8% (171 008 millions de dollars), en hausse de 0,9 point de pourcentage par rapport à FY2023 (68,9%).",
+    "document": "microsoft_q4_2024.pdf",
+    "category": "profitability"
+  },
+  {
+    "id": "q010",
+    "question": "Quelle est la performance du secteur technologique sur le S&P 500 YTD 2024 ?",
+    "ground_truth": "Le secteur technologique du S&P 500 a enregistré une performance de +28,2% depuis le début de l'année 2024, avec un P/E médian de 32x et une recommandation Surpondérer.",
+    "document": "market_overview_2024.pdf",
+    "category": "market"
+  },
+  {
+    "id": "q011",
+    "question": "Quel est le niveau du S&P 500 au 30 juin 2024 et sa performance YTD ?",
+    "ground_truth": "Le S&P 500 était à 5 460 points au 30 juin 2024, avec une performance YTD de +14,5% et une variation sur 12 mois de +22,1%.",
+    "document": "market_overview_2024.pdf",
+    "category": "market"
+  },
+  {
+    "id": "q012",
+    "question": "Quelle est la croissance du PIB américain au T2 2024 ?",
+    "ground_truth": "Le PIB américain a crû de 2,8% en rythme trimestriel annualisé au T2 2024, après une croissance de 1,4% au T1 2024.",
+    "document": "market_overview_2024.pdf",
+    "category": "macro"
+  },
+  {
+    "id": "q013",
+    "question": "Apple a-t-il racheté des actions en FY2023 ? Pour quel montant ?",
+    "ground_truth": "Apple a racheté pour 77,6 milliards de dollars de ses propres actions en FY2023, en baisse de 13,2% par rapport aux 89,4 Md$ en FY2022.",
+    "document": "apple_annual_report_2023.pdf",
+    "category": "capital_allocation"
+  },
+  {
+    "id": "q014",
+    "question": "Quelle est la capitalisation boursière de Microsoft mentionnée dans les données disponibles ?",
+    "ground_truth": "La capitalisation boursière de Microsoft (MSFT) est de 3 300 milliards de dollars selon le rapport de marché 2024.",
+    "document": "market_overview_2024.pdf",
+    "category": "valuation"
+  },
+  {
+    "id": "q015",
+    "question": "Comparez la croissance du chiffre d'affaires d'Apple et de Microsoft pour leurs derniers exercices disponibles.",
+    "ground_truth": "Apple a vu son CA baisser de 2,8% en FY2023 (383,3 Md$), tandis que Microsoft a enregistré une forte croissance de +15,7% en FY2024 (245,1 Md$). Microsoft affiche une dynamique de croissance nettement supérieure, notamment grâce à l'accélération d'Azure et de l'IA.",
+    "document": "apple_annual_report_2023.pdf,microsoft_q4_2024.pdf",
+    "category": "comparison"
+  }
+]
