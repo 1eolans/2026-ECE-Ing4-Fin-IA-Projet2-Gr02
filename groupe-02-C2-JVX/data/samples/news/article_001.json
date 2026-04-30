@@ -1,0 +1,10 @@
+{
+  "id": "article_001",
+  "title": "Apple dépasse les attentes au T4 2023 avec des Services en forte croissance",
+  "content": "Apple Inc. (AAPL) a publié jeudi des résultats trimestriels supérieurs aux attentes de Wall Street, portés par une croissance exceptionnelle de son segment Services. Le chiffre d'affaires du T4 FY2023 s'est établi à 89,5 milliards de dollars (+1% YoY), légèrement au-dessus du consensus à 89,2 Md$. Le segment Services a enregistré un record historique à 22,3 milliards de dollars (+16,3% YoY), avec l'App Store, Apple Music, iCloud et AppleTV+ comme principaux moteurs. Le PDG Tim Cook a déclaré : 'Nos Services atteignent des sommets record. Nous avons maintenant plus d'un milliard d'abonnements payants sur notre plateforme, un jalon historique.' Les ventes d'iPhone ont atteint 43,8 Md$ (+3% YoY), dépassant les prévisions de 43,1 Md$, tirées par le succès de l'iPhone 15 Pro dans les marchés premium. La marge brute a progressé à 45,2%, un record pour un trimestre fiscal Q4. Apple a annoncé un programme de rachat d'actions supplémentaire de 90 Md$ et une augmentation du dividende de 4% à 0,24$/action par trimestre. L'action AAPL a progressé de 2,1% en after-hours suite à la publication.",
+  "source": "Reuters (simulé)",
+  "date": "2023-11-02",
+  "ticker": "AAPL",
+  "url": "https://example.com/news/apple-q4-2023",
+  "category": "earnings"
+}

@@ -1,0 +1,15 @@
+# Dépendances pour le classifieur local (Ollama)
+ollama>=0.1.7
+
+# Manipulation de données et métriques
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.2.0
+
+# Visualisation (Notebook)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Environnement d'exécution
+jupyter>=1.0.0

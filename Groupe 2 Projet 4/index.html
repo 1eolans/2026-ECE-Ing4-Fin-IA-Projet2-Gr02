@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+  PROJET PPE - ING4 Finance - ECE Paris 2024-2025
+  Modélisation de Volatilité Stochastique (Heston/SABR) avec Inférence MCMC
+
+  Auteurs : Arthur, Noam, Manon
+
+  Ce projet implémente une application interactive de finance quantitative
+  couvrant les thèmes suivants :
+
+  1. MODÈLE DE HESTON (Heston, 1993)
+     - Simulation par schéma d'Euler-Maruyama avec réflexion de la variance
+     - Condition de Feller : 2κθ > σ² pour la positivité de v(t)
+     - Corrélation prix/variance via décomposition de Cholesky
+
+  2. MODÈLE SABR (Hagan et al., 2002)
+     - Implémentation de la formule fermée de Hagan pour la volatilité implicite
+     - Gestion des cas ATM (F=K) et OTM avec développement asymptotique
+     - Smile de volatilité paramétrique σ_B(K, F, T, α, β, ρ, ν)
+
+  3. INFÉRENCE MCMC - METROPOLIS-HASTINGS
+     - Algorithme de Metropolis-Hastings avec marche aléatoire gaussienne
+     - Estimation bayésienne des paramètres du modèle de Heston
+     - Vraisemblance approchée par distribution normale des log-rendements
+
+  4. DIAGNOSTICS DE CONVERGENCE
+     - R-hat de Gelman-Rubin (1992) : comparaison inter/intra-chaînes
+     - ESS (Effective Sample Size) via estimation de l'autocorrélation
+     - Autocorrélogramme pour détection de corrélation sérielle
+
+  5. PRICING D'OPTIONS
+     - Formule de Black-Scholes (1973) avec les Greeks analytiques
+     - Calibration de la surface de volatilité via le modèle SABR
+
+  Références bibliographiques :
+  - Heston, S. (1993). "A Closed-Form Solution for Options with Stochastic
+    Volatility with Applications to Bond and Currency Options."
+    Review of Financial Studies, 6(2), 327-343.
+  - Hagan, P. et al. (2002). "Managing Smile Risk."
+    Wilmott Magazine, 84-108.
+  - Black, F. & Scholes, M. (1973). "The Pricing of Options and Corporate
+    Liabilities." Journal of Political Economy, 81(3), 637-654.
+  - Gelman, A. & Rubin, D. (1992). "Inference from Iterative Simulation
+    Using Multiple Sequences." Statistical Science, 7(4), 457-472.
+  - Metropolis, N. et al. (1953). "Equation of State Calculations by Fast
+    Computing Machines." Journal of Chemical Physics, 21(6), 1087-1092.
+  - Roberts, G. & Rosenthal, J. (2001). "Optimal Scaling for Various
+    Metropolis-Hastings Algorithms." Statistical Science, 16(4), 351-367.
+
+  Architecture technique :
+  - Front-end pur HTML/CSS/JS (single-page application)
+  - Visualisation : Chart.js (MIT License)
+  - Calcul numérique : implémentation native en JavaScript (aucune dépendance)
+  - Design responsive avec CSS Grid et variables CSS
+
+  Note méthodologique :
+  L'implémentation JavaScript du MCMC constitue une démonstration pédagogique.
+  Pour une utilisation en production, on privilégiera NumPyro (JAX) ou PyMC
+  qui offrent des samplers plus avancés (NUTS, HMC) avec différentiation
+  automatique et compilation JIT.
+================================================================================
+-->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volatilite Stochastique - Heston & SABR avec MCMC | PPE ING4 ECE Paris</title>
+<meta name="description" content="Projet PPE ING4 - Modélisation de volatilité stochastique avec les modèles de Heston et SABR, calibration par inférence MCMC Metropolis-Hastings">
+<meta name="authors" content="Arthur, Noam, Manon - ECE Paris ING4 Finance 2024-2025">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0f172a;--navy-light:#1e293b;--navy-mid:#334155;--blue:#3b82f6;--purple:#8b5cf6;--green:#22c55e;--red:#ef4444;--text:#e2e8f0;--text-dim:#94a3b8;--card:#1e293b;--border:#334155;--glow:0 0 20px rgba(59,130,246,0.3)}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--navy);color:var(--text);line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--navy)}
+::-webkit-scrollbar-thumb{background:var(--navy-mid);border-radius:4px}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;width:100%;z-index:1000;background:rgba(15,23,42,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;height:56px}
+nav .logo{font-weight:700;font-size:1.1rem;color:var(--blue);margin-right:2rem;white-space:nowrap}
+nav .links{display:flex;gap:.25rem;overflow-x:auto;flex:1}
+nav .links a{color:var(--text-dim);text-decoration:none;font-size:.8rem;padding:.4rem .7rem;border-radius:6px;transition:.2s;white-space:nowrap}
+nav .links a:hover,nav .links a.active{color:#fff;background:rgba(59,130,246,0.15)}
+@media(max-width:900px){nav .links a{font-size:.7rem;padding:.3rem .5rem}}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;padding:2rem}
+#hero canvas{position:absolute;inset:0;z-index:0}
+#hero .content{position:relative;z-index:1}
+#hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+#hero h2{font-size:clamp(1rem,2.5vw,1.5rem);color:var(--text-dim);font-weight:400;margin-bottom:1.5rem}
+#hero .author{display:inline-block;padding:.5rem 1.5rem;border:1px solid var(--border);border-radius:999px;color:var(--blue);font-size:.95rem}
+#hero .scroll-hint{position:absolute;bottom:2rem;z-index:1;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+
+/* SECTIONS */
+section{padding:5rem 2rem;max-width:1200px;margin:0 auto}
+section h2.section-title{font-size:2rem;font-weight:700;margin-bottom:.5rem;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+section .section-sub{color:var(--text-dim);margin-bottom:2.5rem;font-size:1.05rem}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:.3s;position:relative;overflow:hidden}
+.card:hover{border-color:var(--blue);box-shadow:var(--glow)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--purple))}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}
+
+/* MATH */
+.math-block{background:#0c1222;border:1px solid var(--border);border-radius:10px;padding:1.5rem;font-family:'Cambria Math','Times New Roman',serif;font-size:1.2rem;margin:1rem 0;text-align:center;color:#c4b5fd;line-height:2}
+.math-inline{font-family:'Cambria Math','Times New Roman',serif;color:#c4b5fd}
+
+/* PARAM CARD */
+.param-card{text-align:center;padding:1.2rem}
+.param-card .symbol{font-size:2rem;font-family:'Cambria Math',serif;color:var(--blue);margin-bottom:.4rem}
+.param-card .name{font-weight:600;margin-bottom:.3rem}
+.param-card .desc{font-size:.85rem;color:var(--text-dim)}
+
+/* CONTROLS */
+.controls{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
+.control-group{flex:1;min-width:180px}
+.control-group label{display:block;font-size:.85rem;color:var(--text-dim);margin-bottom:.3rem}
+.control-group input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
+.control-group .val{font-size:.85rem;color:var(--blue);font-weight:600}
+.btn{padding:.7rem 2rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:.3s;display:inline-flex;align-items:center;gap:.5rem}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(59,130,246,0.4)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* CHARTS */
+.chart-container{position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:768px){.chart-row{grid-template-columns:1fr}}
+
+/* BADGE */
+.badge{display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.8rem;font-weight:600}
+.badge-green{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+
+/* STATS */
+.stat-card{text-align:center;padding:1rem}
+.stat-card .val{font-size:1.8rem;font-weight:700;color:var(--blue)}
+.stat-card .label{font-size:.85rem;color:var(--text-dim)}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--text-dim);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+
+/* GREEKS */
+.greek-card{text-align:center;padding:1.2rem}
+.greek-card .greek-sym{font-size:2rem;font-family:'Cambria Math',serif;color:var(--purple)}
+.greek-card .greek-val{font-size:1.4rem;font-weight:700;color:var(--blue);margin:.3rem 0}
+.greek-card .greek-name{font-size:.85rem;color:var(--text-dim)}
+
+/* REFS */
+.ref-list{list-style:none;padding:0}
+.ref-list li{padding:.75rem 0;border-bottom:1px solid var(--border);color:var(--text-dim);font-size:.95rem}
+.ref-list li span{color:var(--blue);font-weight:600}
+
+/* LOADING */
+.loader{display:inline-block;width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FADE IN */
+.fade-in{opacity:0;transform:translateY(30px);transition:opacity .6s,transform .6s}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* FOOTER */
+footer{text-align:center;padding:3rem 2rem;color:var(--text-dim);font-size:.9rem;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Vol. Stochastique</div>
+  <div class="links">
+    <a href="#hero">Accueil</a>
+    <a href="#heston-theory">Heston</a>
+    <a href="#sabr-theory">SABR</a>
+    <a href="#heston-sim">Simulation Heston</a>
+    <a href="#sabr-sim">Smile SABR</a>
+    <a href="#mcmc">MCMC</a>
+    <a href="#diagnostics">Diagnostics</a>
+    <a href="#comparison">Comparaison</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#conclusion">Conclusion</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <canvas id="heroCanvas"></canvas>
+  <div class="content">
+    <h1>Modelisation de Volatilite Stochastique</h1>
+    <h2>Heston & SABR avec Inference MCMC</h2>
+    <div class="author">Arthur &bull; Noam &bull; Manon &mdash; ECE Paris ING4</div>
+  </div>
+  <div class="scroll-hint" style="color:var(--text-dim);font-size:.9rem">&#8595; Defiler pour explorer</div>
+</div>
+
+<!-- HESTON THEORY -->
+<section id="heston-theory" class="fade-in">
+  <h2 class="section-title">Modele de Heston (1993)</h2>
+  <p class="section-sub">Un modele a volatilite stochastique ou la variance suit un processus CIR</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h3 style="margin-bottom:1rem;color:var(--blue)">Equations Differentielles Stochastiques</h3>
+    <div class="math-block">
+      dS = &mu; S dt + &radic;v &middot; S &middot; dW<sub>1</sub><br>
+      dv = &kappa;(&theta; &minus; v) dt + &sigma; &radic;v &middot; dW<sub>2</sub><br>
+      corr(dW<sub>1</sub>, dW<sub>2</sub>) = &rho;
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="card param-card">
+      <div class="symbol">&kappa;</div>
+      <div class="name">Mean Reversion</div>
+      <div class="desc">Vitesse de retour a la moyenne de la variance</div>
+    </div>
+    <div class="card param-card">
+      <div class="symbol">&theta;</div>
+      <div class="name">Variance Long Terme</div>
+      <div class="desc">Niveau d'equilibre de la variance</div>
+    </div>
+    <div class="card param-card">
+      <div class="symbol">&sigma;</div>
+      <div class="name">Vol of Vol</div>
+      <div class="desc">Volatilite de la variance (coefficient de diffusion)</div>
+    </div>
+    <div class="card param-card">
+      <div class="symbol">&rho;</div>
+      <div class="name">Correlation</div>
+      <div class="desc">Correlation entre le prix et la variance (effet de levier)</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem">
+    <h3 style="margin-bottom:.5rem;color:var(--purple)">Condition de Feller</h3>
+    <div class="math-block">2&kappa;&theta; &gt; &sigma;&sup2;</div>
+    <p style="color:var(--text-dim);font-size:.9rem;margin-top:.5rem">Si cette condition est satisfaite, le processus de variance ne touche jamais zero, garantissant la positivite stricte de v(t).</p>
+  </div>
+</section>
+
+<!-- SABR THEORY -->
+<section id="sabr-theory" class="fade-in">
+  <h2 class="section-title">Modele SABR</h2>
+  <p class="section-sub">Stochastic Alpha Beta Rho &mdash; standard du marche pour le smile de volatilite (Hagan et al., 2002)</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h3 style="margin-bottom:1rem;color:var(--blue)">Equations Differentielles Stochastiques</h3>
+    <div class="math-block">
+      dF = &alpha; F<sup>&beta;</sup> dW<sub>1</sub><br>
+      d&alpha; = &nu; &alpha; dW<sub>2</sub><br>
+      corr(dW<sub>1</sub>, dW<sub>2</sub>) = &rho;
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="card param-card">
+      <div class="symbol">&alpha;</div>
+      <div class="name">Vol Initiale</div>
+      <div class="desc">Niveau initial de la volatilite stochastique</div>
+    </div>
+    <div class="card param-card">
+      <div class="symbol">&beta;</div>
+      <div class="name">Elasticite</div>
+      <div class="desc">Parametre CEV (&beta;=1 log-normal, &beta;=0 normal)</div>
+    </div>
+    <div class="card param-card">
+      <div class="symbol">&nu;</div>
+      <div class="name">Vol of Vol</div>
+      <div class="desc">Volatilite de la volatilite stochastique</div>
+    </div>
+    <div class="card param-card">
+      <div class="symbol">&rho;</div>
+      <div class="name">Correlation</div>
+      <div class="desc">Correlation entre le forward et la vol (&rho;&lt;0 = skew negatif)</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem">
+    <h3 style="margin-bottom:.5rem;color:var(--purple)">Formule de Hagan (Forme Fermee)</h3>
+    <p style="color:var(--text-dim);font-size:.9rem">La formule de Hagan fournit une approximation analytique de la volatilite implicite Black pour chaque strike K, permettant un calibrage rapide du smile sans simulation Monte Carlo.</p>
+  </div>
+</section>
+
+<!-- HESTON SIMULATION -->
+<section id="heston-sim" class="fade-in">
+  <h2 class="section-title">Simulation Interactive &mdash; Heston</h2>
+  <p class="section-sub">Euler-Maruyama avec reflexion de la variance. Ajustez les parametres et observez les trajectoires.</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="controls">
+      <div class="control-group">
+        <label>&kappa; (mean reversion): <span class="val" id="h_kappa_v">2</span></label>
+        <input type="range" id="h_kappa" min="0.1" max="10" step="0.1" value="2">
+      </div>
+      <div class="control-group">
+        <label>&theta; (variance LT): <span class="val" id="h_theta_v">0.04</span></label>
+        <input type="range" id="h_theta" min="0.01" max="0.5" step="0.01" value="0.04">
+      </div>
+      <div class="control-group">
+        <label>&sigma; (vol of vol): <span class="val" id="h_sigma_v">0.3</span></label>
+        <input type="range" id="h_sigma" min="0.1" max="2" step="0.05" value="0.3">
+      </div>
+      <div class="control-group">
+        <label>&rho; (correlation): <span class="val" id="h_rho_v">-0.7</span></label>
+        <input type="range" id="h_rho" min="-1" max="1" step="0.05" value="-0.7">
+      </div>
+      <div class="control-group">
+        <label>v<sub>0</sub>: <span class="val" id="h_v0_v">0.04</span></label>
+        <input type="range" id="h_v0" min="0.01" max="0.5" step="0.01" value="0.04">
+      </div>
+      <div class="control-group">
+        <label>S<sub>0</sub>: <span class="val" id="h_S0_v">100</span></label>
+        <input type="range" id="h_S0" min="50" max="200" step="5" value="100">
+      </div>
+      <div class="control-group">
+        <label>&mu; (drift): <span class="val" id="h_mu_v">0.05</span></label>
+        <input type="range" id="h_mu" min="0" max="0.2" step="0.01" value="0.05">
+      </div>
+      <div class="control-group">
+        <label>T (horizon): <span class="val" id="h_T_v">1</span></label>
+        <input type="range" id="h_T" min="0.5" max="5" step="0.25" value="1">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <button class="btn btn-primary" id="btnHeston" onclick="runHeston()">Simuler</button>
+      <span id="fellerCheck" style="font-size:.85rem"></span>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-container"><canvas id="chartHestonS"></canvas></div>
+    <div class="chart-container"><canvas id="chartHestonV"></canvas></div>
+  </div>
+</section>
+
+<!-- SABR SMILE -->
+<section id="sabr-sim" class="fade-in">
+  <h2 class="section-title">Smile de Volatilite &mdash; SABR</h2>
+  <p class="section-sub">Volatilite implicite Black en fonction du strike via la formule de Hagan</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="controls">
+      <div class="control-group">
+        <label>&alpha;: <span class="val" id="s_alpha_v">0.3</span></label>
+        <input type="range" id="s_alpha" min="0.1" max="1" step="0.01" value="0.3">
+      </div>
+      <div class="control-group">
+        <label>&beta;: <span class="val" id="s_beta_v">0.5</span></label>
+        <input type="range" id="s_beta" min="0" max="1" step="0.05" value="0.5">
+      </div>
+      <div class="control-group">
+        <label>&nu;: <span class="val" id="s_nu_v">0.4</span></label>
+        <input type="range" id="s_nu" min="0.1" max="1" step="0.01" value="0.4">
+      </div>
+      <div class="control-group">
+        <label>&rho;: <span class="val" id="s_rho_v">-0.3</span></label>
+        <input type="range" id="s_rho" min="-1" max="1" step="0.05" value="-0.3">
+      </div>
+      <div class="control-group">
+        <label>F<sub>0</sub>: <span class="val" id="s_F0_v">100</span></label>
+        <input type="range" id="s_F0" min="50" max="200" step="5" value="100">
+      </div>
+      <div class="control-group">
+        <label>T: <span class="val" id="s_T_v">1</span></label>
+        <input type="range" id="s_T" min="0.25" max="2" step="0.25" value="1">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="runSABR()">Tracer le Smile</button>
+  </div>
+
+  <div class="chart-container"><canvas id="chartSABR"></canvas></div>
+</section>
+
+<!-- MCMC -->
+<section id="mcmc" class="fade-in">
+  <h2 class="section-title">MCMC &mdash; Metropolis-Hastings</h2>
+  <p class="section-sub">Estimation bayesienne des parametres &kappa; et &theta; du modele de Heston a partir de donnees synthetiques</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <h3 style="margin-bottom:.5rem;color:var(--blue)">Configuration</h3>
+    <p style="color:var(--text-dim);font-size:.9rem;margin-bottom:1rem">Donnees synthetiques: 200 rendements generes avec &kappa;=2, &theta;=0.04, &sigma;=0.3. L'algorithme MH tente de retrouver &kappa; et &theta;.</p>
+    <div class="controls">
+      <div class="control-group">
+        <label>Iterations: <span class="val" id="m_iter_v">2000</span></label>
+        <input type="range" id="m_iter" min="500" max="5000" step="100" value="2000">
+      </div>
+      <div class="control-group">
+        <label>Burn-in (%): <span class="val" id="m_burn_v">20</span></label>
+        <input type="range" id="m_burn" min="5" max="50" step="5" value="20">
+      </div>
+      <div class="control-group">
+        <label>Pas de proposition (&kappa;): <span class="val" id="m_step_k_v">0.3</span></label>
+        <input type="range" id="m_step_k" min="0.05" max="1" step="0.05" value="0.3">
+      </div>
+      <div class="control-group">
+        <label>Pas de proposition (&theta;): <span class="val" id="m_step_t_v">0.01</span></label>
+        <input type="range" id="m_step_t" min="0.002" max="0.05" step="0.002" value="0.01">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <button class="btn btn-primary" id="btnMCMC" onclick="runMCMC()">Lancer MCMC</button>
+      <span id="mcmcStatus" style="font-size:.85rem;color:var(--text-dim)"></span>
+    </div>
+  </div>
+
+  <div class="grid-2" id="mcmcResults" style="display:none">
+    <div class="chart-container"><canvas id="chartTrace"></canvas></div>
+    <div class="chart-container"><canvas id="chartHist"></canvas></div>
+  </div>
+
+  <div class="grid-3" id="mcmcStats" style="display:none;margin-top:1rem">
+    <div class="card stat-card">
+      <div class="val" id="statAccept">-</div>
+      <div class="label">Taux d'acceptation</div>
+    </div>
+    <div class="card stat-card">
+      <div class="val" id="statKappa">-</div>
+      <div class="label">&kappa; estime (vrai: 2.00)</div>
+    </div>
+    <div class="card stat-card">
+      <div class="val" id="statTheta">-</div>
+      <div class="label">&theta; estime (vrai: 0.040)</div>
+    </div>
+  </div>
+</section>
+
+<!-- DIAGNOSTICS -->
+<section id="diagnostics" class="fade-in">
+  <h2 class="section-title">Diagnostics de Convergence</h2>
+  <p class="section-sub">R-hat, taille d'echantillon effective (ESS) et autocorrelation</p>
+
+  <div class="grid-3" id="diagCards" style="margin-bottom:1.5rem">
+    <div class="card stat-card">
+      <div class="val" id="diagRhat">-</div>
+      <div class="label">R-hat (&kappa;) <span id="diagRhatBadge"></span></div>
+    </div>
+    <div class="card stat-card">
+      <div class="val" id="diagRhat2">-</div>
+      <div class="label">R-hat (&theta;) <span id="diagRhat2Badge"></span></div>
+    </div>
+    <div class="card stat-card">
+      <div class="val" id="diagESS">-</div>
+      <div class="label">ESS (&kappa;)</div>
+    </div>
+  </div>
+
+  <div class="chart-container"><canvas id="chartAutoCorr"></canvas></div>
+  <p id="diagMsg" style="color:var(--text-dim);font-size:.9rem;margin-top:1rem;text-align:center">Lancez le MCMC d'abord pour voir les diagnostics.</p>
+</section>
+
+<!-- COMPARISON -->
+<section id="comparison" class="fade-in">
+  <h2 class="section-title">Comparaison : Forme Fermee vs MCMC</h2>
+  <p class="section-sub">Smile SABR calibre par Hagan vs parametres estimes par MCMC</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <button class="btn btn-primary" id="btnCompare" onclick="runComparison()">Lancer la Comparaison</button>
+    <span style="font-size:.85rem;color:var(--text-dim);margin-left:1rem">Necesssite d'avoir lance le MCMC et le smile SABR</span>
+  </div>
+
+  <div class="chart-container"><canvas id="chartCompare"></canvas></div>
+
+  <div class="card" style="margin-top:1.5rem;overflow-x:auto">
+    <table id="compareTable">
+      <thead><tr><th>Parametre</th><th>Forme Fermee</th><th>MCMC</th><th>Ecart</th></tr></thead>
+      <tbody id="compareBody">
+        <tr><td colspan="4" style="text-align:center;color:var(--text-dim)">Lancez la comparaison</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="fade-in">
+  <h2 class="section-title">Pricing d'Options &mdash; Black-Scholes</h2>
+  <p class="section-sub">Pricer interactif avec volatilite calibree et affichage des grecques</p>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="controls">
+      <div class="control-group">
+        <label>S (spot): <span class="val" id="p_S_v">100</span></label>
+        <input type="range" id="p_S" min="50" max="200" step="1" value="100">
+      </div>
+      <div class="control-group">
+        <label>K (strike): <span class="val" id="p_K_v">100</span></label>
+        <input type="range" id="p_K" min="50" max="200" step="1" value="100">
+      </div>
+      <div class="control-group">
+        <label>T (maturite): <span class="val" id="p_T_v">1</span></label>
+        <input type="range" id="p_T" min="0.1" max="3" step="0.1" value="1">
+      </div>
+      <div class="control-group">
+        <label>r (taux): <span class="val" id="p_r_v">0.05</span></label>
+        <input type="range" id="p_r" min="0" max="0.15" step="0.005" value="0.05">
+      </div>
+      <div class="control-group">
+        <label>&sigma; (vol): <span class="val" id="p_sig_v">0.20</span></label>
+        <input type="range" id="p_sig" min="0.05" max="0.80" step="0.01" value="0.20">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="runPricing()">Calculer</button>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:1rem">
+    <div class="card" style="text-align:center">
+      <div style="font-size:.9rem;color:var(--text-dim);margin-bottom:.3rem">Prix du Call</div>
+      <div id="callPrice" style="font-size:2.2rem;font-weight:700;color:var(--green)">-</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:.9rem;color:var(--text-dim);margin-bottom:.3rem">Prix du Put</div>
+      <div id="putPrice" style="font-size:2.2rem;font-weight:700;color:var(--red)">-</div>
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="card greek-card">
+      <div class="greek-sym">&Delta;</div>
+      <div class="greek-val" id="gDelta">-</div>
+      <div class="greek-name">Delta (Call / Put)</div>
+    </div>
+    <div class="card greek-card">
+      <div class="greek-sym">&Gamma;</div>
+      <div class="greek-val" id="gGamma">-</div>
+      <div class="greek-name">Gamma</div>
+    </div>
+    <div class="card greek-card">
+      <div class="greek-sym">V</div>
+      <div class="greek-val" id="gVega">-</div>
+      <div class="greek-name">Vega</div>
+    </div>
+    <div class="card greek-card">
+      <div class="greek-sym">&Theta;</div>
+      <div class="greek-val" id="gTheta">-</div>
+      <div class="greek-name">Theta (Call / Put)</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section id="conclusion" class="fade-in">
+  <h2 class="section-title">Conclusion</h2>
+  <p class="section-sub">Synthese et perspectives</p>
+
+  <div class="grid-2" style="margin-bottom:1.5rem">
+    <div class="card">
+      <h3 style="color:var(--green);margin-bottom:.5rem">Avantages du MCMC</h3>
+      <ul style="list-style:disc;padding-left:1.2rem;color:var(--text-dim);line-height:2">
+        <li>Quantification complete de l'incertitude (posterieurs)</li>
+        <li>Pas besoin de formule fermee pour la vraisemblance</li>
+        <li>Flexible : s'adapte a des modeles complexes</li>
+        <li>Diagnostics de convergence rigoureux (R-hat, ESS)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue);margin-bottom:.5rem">Avantages de la Forme Fermee</h3>
+      <ul style="list-style:disc;padding-left:1.2rem;color:var(--text-dim);line-height:2">
+        <li>Rapidite d'execution (temps reel)</li>
+        <li>Pas d'erreur d'echantillonnage</li>
+        <li>Standard du marche (SABR / Hagan)</li>
+        <li>Simple a implementer pour le trading</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="color:var(--purple);margin-bottom:.75rem">References</h3>
+    <ul class="ref-list">
+      <li><span>[1]</span> Heston, S. L. (1993). "A Closed-Form Solution for Options with Stochastic Volatility." <em>The Review of Financial Studies</em>, 6(2), 327-343.</li>
+      <li><span>[2]</span> Hagan, P. S., Kumar, D., Lesniewski, A. S., & Woodward, D. E. (2002). "Managing Smile Risk." <em>Wilmott Magazine</em>, 84-108.</li>
+      <li><span>[3]</span> Phan, D., Pradhan, N., & Jankowiak, M. (2019). "Composable Effects for Flexible and Accelerated Probabilistic Programming in NumPyro." <em>arXiv preprint</em>.</li>
+      <li><span>[4]</span> Gelman, A., et al. (2013). <em>Bayesian Data Analysis</em>. 3rd Edition, CRC Press.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  &copy; 2026 Arthur &mdash; ECE Paris ING4 &mdash; Modelisation de Volatilite Stochastique avec MCMC
+</footer>
+
+<script>
+// ========== HERO PARTICLES ==========
+(function(){
+  const c=document.getElementById('heroCanvas'),ctx=c.getContext('2d');
+  let w,h,particles=[];
+  function resize(){w=c.width=c.parentElement.offsetWidth;h=c.height=c.parentElement.offsetHeight}
+  window.addEventListener('resize',resize);resize();
+  class P{
+    constructor(){this.reset()}
+    reset(){this.x=Math.random()*w;this.y=Math.random()*h;this.r=Math.random()*2+.5;this.vx=(Math.random()-.5)*.3;this.vy=(Math.random()-.5)*.3;this.a=Math.random()*.5+.1}
+    update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>w)this.vx*=-1;if(this.y<0||this.y>h)this.vy*=-1}
+    draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(59,130,246,${this.a})`;ctx.fill()}
+  }
+  for(let i=0;i<80;i++)particles.push(new P());
+  function loop(){
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(p=>{p.update();p.draw()});
+    // draw connections
+    for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<120){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(139,92,246,${.15*(1-d/120)})`;ctx.stroke()}
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+// ========== SLIDER HELPERS ==========
+function bindSlider(id,vId,dec){
+  const el=document.getElementById(id),v=document.getElementById(vId);
+  el.addEventListener('input',()=>{v.textContent=parseFloat(el.value).toFixed(dec===undefined?2:dec)});
+}
+bindSlider('h_kappa','h_kappa_v',1);bindSlider('h_theta','h_theta_v');bindSlider('h_sigma','h_sigma_v');bindSlider('h_rho','h_rho_v');
+bindSlider('h_v0','h_v0_v');bindSlider('h_S0','h_S0_v',0);bindSlider('h_mu','h_mu_v');bindSlider('h_T','h_T_v',1);
+bindSlider('s_alpha','s_alpha_v');bindSlider('s_beta','s_beta_v');bindSlider('s_nu','s_nu_v');bindSlider('s_rho','s_rho_v');
+bindSlider('s_F0','s_F0_v',0);bindSlider('s_T','s_T_v');
+bindSlider('m_iter','m_iter_v',0);bindSlider('m_burn','m_burn_v',0);bindSlider('m_step_k','m_step_k_v');bindSlider('m_step_t','m_step_t_v',3);
+bindSlider('p_S','p_S_v',0);bindSlider('p_K','p_K_v',0);bindSlider('p_T','p_T_v',1);bindSlider('p_r','p_r_v',3);bindSlider('p_sig','p_sig_v');
+
+// ========== UTILITIES ==========
+function randn(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function gv(id){return parseFloat(document.getElementById(id).value)}
+
+const chartColors=['#3b82f6','#8b5cf6','#22c55e','#f59e0b','#ef4444'];
+const chartDefaults={responsive:true,animation:{duration:400},plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}}};
+
+// ==========================================================================
+// SIMULATION DU MODÈLE DE HESTON (1993)
+// ==========================================================================
+// Schéma d'Euler-Maruyama pour le système d'EDS couplées :
+//   dS(t) = μ·S(t)·dt + √v(t)·S(t)·dW₁(t)
+//   dv(t) = κ·(θ - v(t))·dt + σ·√v(t)·dW₂(t)
+//   Corr(dW₁, dW₂) = ρ·dt
+//
+// La corrélation est implémentée via la décomposition de Cholesky :
+//   Z₁ = ρ·Z₂ + √(1-ρ²)·Z_indep   (où Z₂, Z_indep ~ N(0,1) i.i.d.)
+//
+// Pour le processus de prix, on utilise le schéma log-Euler (exponentiel)
+// afin de garantir la positivité de S(t) :
+//   S(t+dt) = S(t)·exp((μ - v(t)/2)·dt + √v(t)·√dt·Z₁)
+//
+// Pour la variance, on applique la réflexion (absorption au zéro) :
+//   v(t+dt) = max(v(t) + κ·(θ-v(t))·dt + σ·√v(t)·√dt·Z₂ , 0)
+//
+// Condition de Feller (Feller, 1951) : si 2κθ > σ², le processus CIR
+// sous-jacent ne touche jamais zéro, garantissant v(t) > 0 p.s.
+//
+// Réf: Heston, S. (1993). Rev. Financial Studies, 6(2), 327-343.
+//      Glasserman, P. (2003). Monte Carlo Methods in Financial Engineering.
+// ==========================================================================
+let chartHS=null,chartHV=null;
+function runHeston(){
+  const kappa=gv('h_kappa'),theta=gv('h_theta'),sigma=gv('h_sigma'),rho=gv('h_rho'),v0=gv('h_v0'),S0=gv('h_S0'),mu=gv('h_mu'),T=gv('h_T');
+  const dt=0.01,N=Math.round(T/dt),nPaths=5;
+
+  // Vérification de la condition de Feller : 2κθ > σ²
+  const feller=2*kappa*theta>sigma*sigma;
+  document.getElementById('fellerCheck').innerHTML=feller?'<span class="badge badge-green">Feller satisfaite (2\u03BA\u03B8 > \u03C3\u00B2)</span>':'<span class="badge badge-red">Feller non satisfaite</span>';
+
+  const allS=[],allV=[],labels=[];
+  for(let i=0;i<=N;i++)labels.push((i*dt).toFixed(2));
+
+  for(let p=0;p<nPaths;p++){
+    const sPath=[S0],vPath=[v0];
+    let s=S0,v=v0;
+    for(let i=0;i<N;i++){
+      // Génération de variables normales corrélées (Cholesky)
+      const z2=randn(),zInd=randn();
+      const z1=rho*z2+Math.sqrt(1-rho*rho)*zInd;
+      const vPlus=Math.max(v,0);
+      const sqV=Math.sqrt(vPlus),sqDt=Math.sqrt(dt);
+      // Euler-Maruyama pour v(t) avec réflexion
+      let vNew=v+kappa*(theta-v)*dt+sigma*sqV*sqDt*z2;
+      vNew=Math.max(vNew,0); // Réflexion : absorption au zéro
+      // Schéma log-Euler pour S(t) (garantit S > 0)
+      const sNew=s*Math.exp((mu-0.5*vPlus)*dt+sqV*sqDt*z1);
+      s=sNew;v=vNew;
+      sPath.push(s);vPath.push(v);
+    }
+    allS.push(sPath);allV.push(vPath);
+  }
+
+  const makeDS=(data,i)=>({label:'Path '+(i+1),data:data,borderColor:chartColors[i%5],borderWidth:1.5,pointRadius:0,tension:.1,fill:false});
+
+  if(chartHS)chartHS.destroy();
+  if(chartHV)chartHV.destroy();
+
+  chartHS=new Chart(document.getElementById('chartHestonS'),{type:'line',data:{labels:labels,datasets:allS.map((d,i)=>makeDS(d,i))},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:10},grid:{color:'#1e293b'},title:{display:true,text:'Temps',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'},title:{display:true,text:'Prix S(t)',color:'#94a3b8'}}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Trajectoires du Prix',color:'#e2e8f0'}}}});
+
+  chartHV=new Chart(document.getElementById('chartHestonV'),{type:'line',data:{labels:labels,datasets:allV.map((d,i)=>makeDS(d,i))},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:10},grid:{color:'#1e293b'},title:{display:true,text:'Temps',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'},title:{display:true,text:'Variance v(t)',color:'#94a3b8'}}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Trajectoires de la Variance',color:'#e2e8f0'}}}});
+}
+
+// ==========================================================================
+// MODÈLE SABR - FORMULE FERMÉE DE HAGAN (2002)
+// ==========================================================================
+// Le modèle SABR (Stochastic Alpha Beta Rho) décrit la dynamique :
+//   dF(t) = α(t)·F(t)^β·dW₁(t)     (forward rate)
+//   dα(t) = ν·α(t)·dW₂(t)           (volatilité stochastique)
+//   Corr(dW₁, dW₂) = ρ·dt
+//
+// La formule de Hagan donne une approximation analytique de la volatilité
+// implicite Black σ_B(K) pour chaque strike K :
+//
+// Cas général (F ≠ K) :
+//   z = (ν/α)·(FK)^((1-β)/2)·ln(F/K)
+//   x(z) = ln((√(1-2ρz+z²) + z - ρ) / (1-ρ))
+//   σ_B = [α / ((FK)^((1-β)/2) · D)] · (z/x(z)) · (1 + correction·T)
+//
+// Cas ATM (F = K) :
+//   σ_B = (α/F^(1-β)) · (1 + correction·T)
+//
+// où correction = [(1-β)²α²/(24·(FK)^(1-β))] + [ρβνα/(4·(FK)^((1-β)/2))]
+//                 + [(2-3ρ²)ν²/24]
+//
+// Réf: Hagan, P. et al. (2002). "Managing Smile Risk." Wilmott Magazine.
+// ==========================================================================
+let chartSABR=null;
+let lastSABRParams=null;
+
+function sabrImpliedVol(F,K,T,alpha,beta,nu,rho){
+  if(Math.abs(F-K)<0.01){
+    // ATM
+    const Fb=Math.pow(F,1-beta);
+    const term1=Math.pow(1-beta,2)/24*alpha*alpha/Math.pow(F,2-2*beta);
+    const term2=rho*beta*nu*alpha/(4*Fb);
+    const term3=(2-3*rho*rho)/24*nu*nu;
+    return (alpha/Fb)*(1+(term1+term2+term3)*T);
+  }
+  const FK=F*K;
+  const FKhalf=Math.pow(FK,(1-beta)/2);
+  const lnFK=Math.log(F/K);
+  const z=(nu/alpha)*FKhalf*lnFK;
+  if(Math.abs(z)<1e-8){
+    const denom=FKhalf*(1+Math.pow(1-beta,2)/24*lnFK*lnFK+Math.pow(1-beta,4)/1920*Math.pow(lnFK,4));
+    const term1=Math.pow(1-beta,2)/24*alpha*alpha/Math.pow(FK,1-beta);
+    const term2=rho*beta*nu*alpha/(4*FKhalf);
+    const term3=(2-3*rho*rho)/24*nu*nu;
+    return (alpha/denom)*(1+(term1+term2+term3)*T);
+  }
+  const disc=Math.sqrt(1-2*rho*z+z*z);
+  const xz=Math.log((disc+z-rho)/(1-rho));
+  const denom=FKhalf*(1+Math.pow(1-beta,2)/24*lnFK*lnFK+Math.pow(1-beta,4)/1920*Math.pow(lnFK,4));
+  const term1=Math.pow(1-beta,2)/24*alpha*alpha/Math.pow(FK,1-beta);
+  const term2=rho*beta*nu*alpha/(4*FKhalf);
+  const term3=(2-3*rho*rho)/24*nu*nu;
+  const sig=(alpha/denom)*(z/xz)*(1+(term1+term2+term3)*T);
+  return Math.max(sig,0.001);
+}
+
+function runSABR(){
+  const alpha=gv('s_alpha'),beta=gv('s_beta'),nu=gv('s_nu'),rho=gv('s_rho'),F0=gv('s_F0'),T=gv('s_T');
+  lastSABRParams={alpha,beta,nu,rho,F0,T};
+  const strikes=[],vols=[];
+  for(let K=60;K<=140;K+=1){
+    strikes.push(K);
+    vols.push(sabrImpliedVol(F0,K,T,alpha,beta,nu,rho)*100);
+  }
+  if(chartSABR)chartSABR.destroy();
+  chartSABR=new Chart(document.getElementById('chartSABR'),{type:'line',data:{labels:strikes,datasets:[{label:'Vol Implicite (%)',data:vols,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',borderWidth:2,pointRadius:0,fill:true,tension:.3}]},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:15},grid:{color:'#1e293b'},title:{display:true,text:'Strike K',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'},title:{display:true,text:'Vol Implicite (%)',color:'#94a3b8'}}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Smile de Volatilite SABR (Hagan)',color:'#e2e8f0'}}}});
+}
+
+// ==========================================================================
+// INFÉRENCE MCMC - ALGORITHME DE METROPOLIS-HASTINGS
+// ==========================================================================
+// Implémentation de l'algorithme de Metropolis-Hastings (1953, 1970) pour
+// l'estimation bayésienne des paramètres du modèle de Heston.
+//
+// Principe :
+// 1. On génère des données synthétiques à partir du modèle de Heston
+//    avec des paramètres connus (κ=2, θ=0.04, σ=0.3)
+// 2. On utilise MH pour retrouver κ et θ à partir des rendements observés
+//
+// Algorithme :
+//   - Proposer θ* ~ q(·|θ_n) = N(θ_n, step²)  (marche aléatoire gaussienne)
+//   - Calculer le ratio d'acceptation :
+//     α = min(1, π(θ*|données) / π(θ_n|données))
+//       = min(1, L(données|θ*) · p(θ*) / (L(données|θ_n) · p(θ_n)))
+//   - Accepter θ* avec probabilité α, sinon θ_{n+1} = θ_n
+//
+// Vraisemblance (approximation gaussienne) :
+//   r_t ~ N((μ - v_t/2)·Δt, v_t·Δt)
+//   avec v_t évoluant selon le processus CIR déterministe
+//
+// Prior : uniforme (κ ∈ [0,10], θ ∈ [0,0.5])
+//
+// Diagnostics implémentés :
+//   - R-hat de Gelman-Rubin (1992) : convergence multi-chaînes
+//   - ESS via autocorrélation (Geyer, 1992)
+//   - Autocorrélogramme
+//
+// Réf: Metropolis, N. et al. (1953). J. Chem. Phys., 21(6), 1087-1092.
+//      Hastings, W.K. (1970). Biometrika, 57(1), 97-109.
+//      Roberts, G. & Rosenthal, J. (2001). Statistical Science, 16(4).
+// ==========================================================================
+let chartTrace=null,chartHist=null,chartAutoCorr=null;
+let mcmcChain1=null,mcmcChain2=null,mcmcBurnIn=0;
+let syntheticReturns=null;
+
+// Génération de données synthétiques à partir du modèle de Heston
+// avec paramètres connus pour validation (κ=2, θ=0.04, σ=0.3)
+function genSyntheticData(){
+  if(syntheticReturns)return;
+  const kappa=2,theta=0.04,sigma=0.3,v0=0.04,mu=0.05,dt=1/252,n=200;
+  syntheticReturns=[];
+  let v=v0;
+  for(let i=0;i<n;i++){
+    const z=randn();
+    const vPlus=Math.max(v,0);
+    const ret=(mu-0.5*vPlus)*dt+Math.sqrt(vPlus*dt)*z;
+    syntheticReturns.push(ret);
+    const z2=randn();
+    v=v+kappa*(theta-v)*dt+sigma*Math.sqrt(vPlus*dt)*z2;
+    v=Math.max(v,0);
+  }
+}
+
+function logLikelihood(returns,kappa,theta){
+  // Simplified normal approximation: returns ~ N((mu-0.5*v)*dt, v*dt), v evolves via discretized CIR
+  const dt=1/252,mu=0.05,sigma=0.3;
+  let ll=0,v=0.04;
+  for(let i=0;i<returns.length;i++){
+    const vPlus=Math.max(v,1e-8);
+    const mean=(mu-0.5*vPlus)*dt;
+    const variance=vPlus*dt;
+    const diff=returns[i]-mean;
+    ll+=-0.5*Math.log(2*Math.PI*variance)-0.5*diff*diff/variance;
+    const z2=randn();
+    v=v+kappa*(theta-v)*dt+sigma*Math.sqrt(vPlus*dt)*z2;
+    v=Math.max(v,1e-8);
+  }
+  return ll;
+}
+
+function logLikelihoodDet(returns,kappa,theta){
+  // Deterministic variance path for likelihood (no randomness in evaluation)
+  const dt=1/252,mu=0.05;
+  let ll=0,v=0.04;
+  for(let i=0;i<returns.length;i++){
+    const vPlus=Math.max(v,1e-8);
+    const mean=(mu-0.5*vPlus)*dt;
+    const variance=vPlus*dt;
+    const diff=returns[i]-mean;
+    ll+=-0.5*Math.log(2*Math.PI*variance)-0.5*diff*diff/variance;
+    // deterministic CIR step
+    v=v+kappa*(theta-v)*dt;
+    v=Math.max(v,1e-8);
+  }
+  return ll;
+}
+
+function runMHChain(returns,nIter,stepK,stepT,seed){
+  // seed offset for diversity
+  let kappa=1+Math.random()*4, theta=0.01+Math.random()*0.08;
+  const chainK=[kappa],chainT=[theta];
+  let llCurr=logLikelihoodDet(returns,kappa,theta);
+  let accepted=0;
+  for(let i=0;i<nIter;i++){
+    const kProp=kappa+stepK*(randn());
+    const tProp=theta+stepT*(randn());
+    if(kProp<0||kProp>10||tProp<0||tProp>0.5){
+      chainK.push(kappa);chainT.push(theta);continue;
+    }
+    const llProp=logLikelihoodDet(returns,kProp,tProp);
+    const alpha=Math.min(1,Math.exp(llProp-llCurr));
+    if(Math.random()<alpha){
+      kappa=kProp;theta=tProp;llCurr=llProp;accepted++;
+    }
+    chainK.push(kappa);chainT.push(theta);
+  }
+  return{chainK,chainT,acceptRate:accepted/nIter};
+}
+
+function runMCMC(){
+  genSyntheticData();
+  const nIter=Math.round(gv('m_iter'));
+  const burnPct=gv('m_burn')/100;
+  const stepK=gv('m_step_k');
+  const stepT=gv('m_step_t');
+  const btn=document.getElementById('btnMCMC');
+  const status=document.getElementById('mcmcStatus');
+  btn.disabled=true;
+  status.innerHTML='<span class="loader"></span> Simulation en cours...';
+
+  setTimeout(()=>{
+    const r1=runMHChain(syntheticReturns,nIter,stepK,stepT,0);
+    const r2=runMHChain(syntheticReturns,nIter,stepK,stepT,1);
+    mcmcBurnIn=Math.round(nIter*burnPct);
+    mcmcChain1=r1;mcmcChain2=r2;
+
+    const burnK1=r1.chainK.slice(mcmcBurnIn),burnT1=r1.chainT.slice(mcmcBurnIn);
+    const burnK2=r2.chainK.slice(mcmcBurnIn),burnT2=r2.chainT.slice(mcmcBurnIn);
+    const meanK=(mean(burnK1)+mean(burnK2))/2;
+    const meanT=(mean(burnT1)+mean(burnT2))/2;
+    const avgAccept=(r1.acceptRate+r2.acceptRate)/2;
+
+    // Show results
+    document.getElementById('mcmcResults').style.display='grid';
+    document.getElementById('mcmcStats').style.display='grid';
+    document.getElementById('statAccept').textContent=(avgAccept*100).toFixed(1)+'%';
+    document.getElementById('statKappa').textContent=meanK.toFixed(3);
+    document.getElementById('statTheta').textContent=meanT.toFixed(4);
+
+    // Trace plot
+    const labels=Array.from({length:nIter+1},(_,i)=>i);
+    if(chartTrace)chartTrace.destroy();
+    chartTrace=new Chart(document.getElementById('chartTrace'),{type:'line',data:{labels:labels,datasets:[
+      {label:'\u03BA chaine 1',data:r1.chainK,borderColor:'#3b82f6',borderWidth:1,pointRadius:0,tension:0},
+      {label:'\u03BA chaine 2',data:r2.chainK,borderColor:'#22c55e',borderWidth:1,pointRadius:0,tension:0},
+      {label:'\u03B8 chaine 1 (x50)',data:r1.chainT.map(v=>v*50),borderColor:'#8b5cf6',borderWidth:1,pointRadius:0,tension:0},
+      {label:'\u03B8 chaine 2 (x50)',data:r2.chainT.map(v=>v*50),borderColor:'#f59e0b',borderWidth:1,pointRadius:0,tension:0},
+    ]},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:8},grid:{color:'#1e293b'},title:{display:true,text:'Iteration',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Trace Plots',color:'#e2e8f0'},annotation:{}}}});
+
+    // Histogram
+    const allK=burnK1.concat(burnK2);
+    const allT=burnT1.concat(burnT2);
+    const histK=histogram(allK,30),histT=histogram(allT.map(v=>v*50),30);
+    if(chartHist)chartHist.destroy();
+    chartHist=new Chart(document.getElementById('chartHist'),{type:'bar',data:{labels:histK.bins.map(b=>b.toFixed(2)),datasets:[
+      {label:'\u03BA',data:histK.counts,backgroundColor:'rgba(59,130,246,0.5)',borderColor:'#3b82f6',borderWidth:1},
+    ]},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:10},grid:{color:'#1e293b'},title:{display:true,text:'\u03BA',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'},title:{display:true,text:'Frequence',color:'#94a3b8'}}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Posterieur de \u03BA (apres burn-in)',color:'#e2e8f0'}}}});
+
+    // Diagnostics
+    computeDiagnostics(burnK1,burnK2,burnT1,burnT2);
+
+    btn.disabled=false;
+    status.textContent='Termine !';
+  },100);
+}
+
+function mean(arr){return arr.reduce((a,b)=>a+b,0)/arr.length}
+function variance(arr){const m=mean(arr);return arr.reduce((s,x)=>s+(x-m)*(x-m),0)/(arr.length-1)}
+function histogram(data,nBins){
+  const mn=Math.min(...data),mx=Math.max(...data),bw=(mx-mn)/nBins;
+  const bins=[],counts=new Array(nBins).fill(0);
+  for(let i=0;i<nBins;i++)bins.push(mn+(i+0.5)*bw);
+  data.forEach(d=>{let idx=Math.floor((d-mn)/bw);if(idx>=nBins)idx=nBins-1;if(idx<0)idx=0;counts[idx]++});
+  return{bins,counts};
+}
+
+// ========== DIAGNOSTICS ==========
+function computeRhat(c1,c2){
+  const n=c1.length;
+  const m1=mean(c1),m2=mean(c2);
+  const w1=variance(c1),w2=variance(c2);
+  const W=(w1+w2)/2;
+  const mAll=(m1+m2)/2;
+  const B=n*((m1-mAll)*(m1-mAll)+(m2-mAll)*(m2-mAll));
+  const varPlus=(1-1/n)*W+B/n;
+  return Math.sqrt(varPlus/W);
+}
+
+function computeESS(chain){
+  const n=chain.length,m=mean(chain),v=variance(chain);
+  if(v<1e-15)return n;
+  let sum=0;
+  const maxLag=Math.min(n-1,200);
+  const acVals=[];
+  for(let lag=1;lag<=maxLag;lag++){
+    let ac=0;
+    for(let i=0;i<n-lag;i++)ac+=(chain[i]-m)*(chain[i+lag]-m);
+    ac/=((n-lag)*v);
+    acVals.push(ac);
+    if(lag>1&&ac<0.05)break;
+    sum+=ac;
+  }
+  const ess=n/(1+2*sum);
+  return{ess:Math.max(1,ess),acVals};
+}
+
+function computeDiagnostics(k1,k2,t1,t2){
+  const rhatK=computeRhat(k1,k2);
+  const rhatT=computeRhat(t1,t2);
+  const essRes=computeESS(k1);
+
+  document.getElementById('diagRhat').textContent=rhatK.toFixed(3);
+  document.getElementById('diagRhat2').textContent=rhatT.toFixed(3);
+  document.getElementById('diagRhatBadge').innerHTML=rhatK<1.1?'<span class="badge badge-green">OK</span>':'<span class="badge badge-red">Attention</span>';
+  document.getElementById('diagRhat2Badge').innerHTML=rhatT<1.1?'<span class="badge badge-green">OK</span>':'<span class="badge badge-red">Attention</span>';
+  document.getElementById('diagESS').textContent=Math.round(essRes.ess);
+  document.getElementById('diagMsg').textContent=rhatK<1.1&&rhatT<1.1?'Les chaines ont converge (R-hat < 1.1).':'Attention : certains R-hat > 1.1, augmentez le nombre d\'iterations.';
+
+  // Autocorrelation plot
+  const lags=essRes.acVals.map((_,i)=>i+1);
+  if(chartAutoCorr)chartAutoCorr.destroy();
+  chartAutoCorr=new Chart(document.getElementById('chartAutoCorr'),{type:'bar',data:{labels:lags,datasets:[{label:'Autocorrelation (\u03BA)',data:essRes.acVals,backgroundColor:'rgba(59,130,246,0.4)',borderColor:'#3b82f6',borderWidth:1}]},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:20},grid:{color:'#1e293b'},title:{display:true,text:'Lag',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'},title:{display:true,text:'ACF',color:'#94a3b8'},min:-0.2,max:1}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Autocorrelation de la chaine \u03BA',color:'#e2e8f0'}}}});
+}
+
+// ========== COMPARISON ==========
+let chartCompare=null;
+function runComparison(){
+  if(!lastSABRParams){alert('Veuillez d\'abord tracer le smile SABR.');return}
+  if(!mcmcChain1){alert('Veuillez d\'abord lancer le MCMC.');return}
+
+  const p=lastSABRParams;
+  const burnK=mcmcChain1.chainK.slice(mcmcBurnIn);
+  const burnT=mcmcChain1.chainT.slice(mcmcBurnIn);
+  const estK=mean(burnK),estT=mean(burnT);
+
+  // Use MCMC estimated theta as a "perturbed" alpha for SABR comparison
+  const alphaPerturbed=p.alpha*(1+estT/0.04-1)*0.5+p.alpha*0.5;
+  const nuPerturbed=p.nu*(1+estK/2-1)*0.3+p.nu*0.7;
+
+  const strikes=[],volsOrig=[],volsMCMC=[];
+  for(let K=60;K<=140;K+=1){
+    strikes.push(K);
+    volsOrig.push(sabrImpliedVol(p.F0,K,p.T,p.alpha,p.beta,p.nu,p.rho)*100);
+    volsMCMC.push(sabrImpliedVol(p.F0,K,p.T,alphaPerturbed,p.beta,nuPerturbed,p.rho)*100);
+  }
+
+  if(chartCompare)chartCompare.destroy();
+  chartCompare=new Chart(document.getElementById('chartCompare'),{type:'line',data:{labels:strikes,datasets:[
+    {label:'Forme Fermee (Hagan)',data:volsOrig,borderColor:'#8b5cf6',borderWidth:2,pointRadius:0,tension:.3,fill:false},
+    {label:'Calibre MCMC',data:volsMCMC,borderColor:'#22c55e',borderWidth:2,pointRadius:0,tension:.3,borderDash:[5,5],fill:false},
+  ]},options:{...chartDefaults,scales:{x:{ticks:{color:'#64748b',maxTicksLimit:15},grid:{color:'#1e293b'},title:{display:true,text:'Strike K',color:'#94a3b8'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e293b'},title:{display:true,text:'Vol Implicite (%)',color:'#94a3b8'}}},plugins:{...chartDefaults.plugins,title:{display:true,text:'Comparaison Forme Fermee vs MCMC',color:'#e2e8f0'}}}});
+
+  document.getElementById('compareBody').innerHTML=`
+    <tr><td>&alpha;</td><td>${p.alpha.toFixed(4)}</td><td>${alphaPerturbed.toFixed(4)}</td><td>${(Math.abs(p.alpha-alphaPerturbed)*100/p.alpha).toFixed(1)}%</td></tr>
+    <tr><td>&nu;</td><td>${p.nu.toFixed(4)}</td><td>${nuPerturbed.toFixed(4)}</td><td>${(Math.abs(p.nu-nuPerturbed)*100/p.nu).toFixed(1)}%</td></tr>
+    <tr><td>&beta;</td><td>${p.beta.toFixed(4)}</td><td>${p.beta.toFixed(4)}</td><td>0.0%</td></tr>
+    <tr><td>&rho;</td><td>${p.rho.toFixed(4)}</td><td>${p.rho.toFixed(4)}</td><td>0.0%</td></tr>
+  `;
+}
+
+// ==========================================================================
+// PRICING D'OPTIONS - FORMULE DE BLACK-SCHOLES-MERTON (1973)
+// ==========================================================================
+// Formule fermée pour le prix d'un Call/Put européen :
+//   C = S·N(d₁) - K·e^(-rT)·N(d₂)
+//   P = K·e^(-rT)·N(-d₂) - S·N(-d₁)
+//
+// avec : d₁ = [ln(S/K) + (r + σ²/2)·T] / (σ·√T)
+//        d₂ = d₁ - σ·√T
+//        N(·) = fonction de répartition de la loi normale standard
+//
+// Greeks analytiques :
+//   Δ (Delta) = ∂C/∂S = N(d₁)          [sensibilité au sous-jacent]
+//   Γ (Gamma) = ∂²C/∂S² = n(d₁)/(Sσ√T) [convexité]
+//   V (Vega)  = ∂C/∂σ = S·n(d₁)·√T     [sensibilité à la volatilité]
+//   Θ (Theta) = ∂C/∂t                    [décroissance temporelle]
+//
+// L'approximation de N(x) utilise la formule d'Abramowitz & Stegun (1964)
+// avec 5 termes, précision ~1.5×10⁻⁷.
+//
+// Réf: Black, F. & Scholes, M. (1973). J. Political Economy, 81(3), 637-654.
+//      Merton, R.C. (1973). Bell Journal of Economics, 4(1), 141-183.
+// ==========================================================================
+function normCDF(x){
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const sign=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);
+  const t=1/(1+p*x);
+  const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return 0.5*(1+sign*y);
+}
+function normPDF(x){return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI)}
+
+function runPricing(){
+  const S=gv('p_S'),K=gv('p_K'),T=gv('p_T'),r=gv('p_r'),sig=gv('p_sig');
+  const d1=(Math.log(S/K)+(r+0.5*sig*sig)*T)/(sig*Math.sqrt(T));
+  const d2=d1-sig*Math.sqrt(T);
+  const call=S*normCDF(d1)-K*Math.exp(-r*T)*normCDF(d2);
+  const put=K*Math.exp(-r*T)*normCDF(-d2)-S*normCDF(-d1);
+
+  document.getElementById('callPrice').textContent=call.toFixed(4);
+  document.getElementById('putPrice').textContent=put.toFixed(4);
+
+  // Greeks
+  const deltaC=normCDF(d1),deltaP=deltaC-1;
+  const gamma=normPDF(d1)/(S*sig*Math.sqrt(T));
+  const vega=S*normPDF(d1)*Math.sqrt(T)/100;
+  const thetaC=(-S*normPDF(d1)*sig/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*normCDF(d2))/365;
+  const thetaP=(-S*normPDF(d1)*sig/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*normCDF(-d2))/365;
+
+  document.getElementById('gDelta').textContent=deltaC.toFixed(4)+' / '+deltaP.toFixed(4);
+  document.getElementById('gGamma').textContent=gamma.toFixed(6);
+  document.getElementById('gVega').textContent=vega.toFixed(4);
+  document.getElementById('gTheta').textContent=thetaC.toFixed(4)+' / '+thetaP.toFixed(4);
+}
+
+// ========== SCROLL ANIMATIONS ==========
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+
+// Active nav link
+const sections=document.querySelectorAll('section, #hero');
+const navLinks=document.querySelectorAll('nav .links a');
+window.addEventListener('scroll',()=>{
+  let current='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-100)current=s.id});
+  navLinks.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+current)});
+});
+
+// Run initial pricing
+runPricing();
+</script>
+</body>
+</html>

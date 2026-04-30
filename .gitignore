@@ -1,0 +1,13 @@
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.vscode/
+.idea/
+.claude/
+.env
+node_modules/
+package.json
+package-lock.json
+*.pth

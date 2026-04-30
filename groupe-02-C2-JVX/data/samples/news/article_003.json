@@ -1,0 +1,10 @@
+{
+  "id": "article_003",
+  "title": "NVIDIA devient la première capitalisation mondiale avec 3 300 Md$ grâce à la demande IA",
+  "content": "NVIDIA Corporation (NVDA) a brièvement dépassé Microsoft pour devenir la plus grande capitalisation boursière mondiale, atteignant 3 335 milliards de dollars le 18 juin 2024, portée par une demande insatiable pour ses processeurs graphiques dédiés à l'intelligence artificielle. L'action NVDA a progressé de 197% depuis le début de l'année 2024, après un gain de 239% en 2023. Les GPU H100 et H200 de NVIDIA sont au coeur des infrastructures d'entraînement et d'inférence des grands modèles de langage (LLM) comme GPT-4, Gemini et Claude. La demande excède largement l'offre disponible, avec des délais de livraison de 8 à 12 mois pour les GPU H100 et une liste d'attente de plusieurs milliards de dollars. Au dernier trimestre (T1 FY2025, clos en avril 2024), NVIDIA a réalisé 26,0 Md$ de chiffre d'affaires (+262% YoY) avec une marge brute record de 78,4%. Le PDG Jensen Huang a affirmé : 'Nous sommes au début d'un changement de paradigme computing. Les centres de données du monde entier sont en train d'être réinventés pour l'ère de l'IA.' Les analystes estiment que le marché des accélérateurs IA atteindra 200 Md$ en 2024.",
+  "source": "Financial Times (simulé)",
+  "date": "2024-06-19",
+  "ticker": "NVDA",
+  "url": "https://example.com/news/nvidia-market-cap-2024",
+  "category": "market"
+}
